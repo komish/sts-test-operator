@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -13,6 +14,9 @@ type StsTesterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+
+	// Reference: https://github.com/kubernetes/api/blob/master/apps/v1/types.go#L61
+	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 }
 
 // StsTesterStatus defines the observed state of StsTester
@@ -21,6 +25,11 @@ type StsTesterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+
+	// Reference: https://github.com/kubernetes/api/blob/master/apps/v1/types.go#L61
+	// We remove the omitempty here because we expect the operator to add a default PodManagementPolicy
+	// if none was provided by the user.
+	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

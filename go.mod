@@ -1,11 +1,17 @@
 module github.com/komish/sts-test-operator
 
 require (
+	github.com/go-openapi/spec v0.17.2
+	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/google/gofuzz v1.0.0 // indirect
 	github.com/operator-framework/operator-sdk v0.13.1-0.20200103201934-43cf58de5f70
 	github.com/spf13/pflag v1.0.3
-	k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
-	k8s.io/apimachinery v0.0.0-20190913080033-27d36303b655
+	golang.org/x/net v0.0.0-20191209160850-c0dbc17a3553 // indirect
+	k8s.io/api v0.17.0
+	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
+	k8s.io/klog v1.0.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20190401085232-94e1e7b7574c
 	sigs.k8s.io/controller-runtime v0.2.0
 )
 

@@ -16,7 +16,7 @@ spec:
       containers:
         - name: sts-test-operator
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: quay.io/komish/sts-test-operator
           command:
           - sts-test-operator
           imagePullPolicy: Always
