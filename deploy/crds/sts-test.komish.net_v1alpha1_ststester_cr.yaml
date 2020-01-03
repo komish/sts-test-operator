@@ -1,0 +1,7 @@
+apiVersion: sts-test.komish.net/v1alpha1
+kind: StsTester
+metadata:
+  name: example-ststester
+spec:
+  # Add fields here
+  size: 3
