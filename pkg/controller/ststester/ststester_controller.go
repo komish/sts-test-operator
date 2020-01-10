@@ -4,9 +4,10 @@ import (
 	"context"
 
 	ststestv1alpha1 "github.com/komish/sts-test-operator/pkg/apis/ststest/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
+	appsv1 "k8s.io/api/apps/v1"
+	// corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	// metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -51,13 +52,25 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner StsTester
+	/* OG Scaffolding
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &ststestv1alpha1.StsTester{},
 	})
 	if err != nil {
+		return err
+	}
+	*/
+
+	// Watch for changes to secondary resource Pods and requeue the owner StsTester
+
+	// We'll deploy a statefulset so we'll watch statefulsets.
+	if err = c.Watch(
+		&source.Kind{Type: &appsv1.StatefulSet{}},
+		&handler.EnqueueRequestForOwner{
+			IsController: true,
+			OwnerType:    &ststestv1alpha1.StsTester{},
+		}); err != nil {
 		return err
 	}
 
@@ -100,54 +113,46 @@ func (r *ReconcileStsTester) Reconcile(request reconcile.Request) (reconcile.Res
 		return reconcile.Result{}, err
 	}
 
+	// If we got here, then we got a matching instance in the request. Now check to see
+	// if we have our (arbitrary) config map in the API. And that we can even see the configmap.
+	cm, err := getConfigMapForCR(r.client, instance)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// We want to inform the user how to find information on this here. We'll still exit
+			// because this is required.
+			reqLogger.Error(err, "An example error about the config map being missing goes here. https://example.com/more-info-on-this",
+				"ConfigMap.Name", instance.Spec.ConfigMapName)
+		}
+		// We should requeue here
+		return reconcile.Result{}, err
+	}
+	reqLogger.Info("Found expected ConfigMap", "ConfigMap.Name", cm.ObjectMeta.Name)
+
 	// Define a new Pod object
-	pod := newPodForCR(instance)
+	sts := newStatefulsetForCR(instance)
 
 	// Set StsTester instance as the owner and controller
-	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
+	if err := controllerutil.SetControllerReference(instance, sts, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// Check if this Pod already exists
-	found := &corev1.Pod{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: pod.Name, Namespace: pod.Namespace}, found)
+	found := &appsv1.StatefulSet{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: sts.Name, Namespace: sts.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
-		reqLogger.Info("Creating a new Pod", "Pod.Namespace", pod.Namespace, "Pod.Name", pod.Name)
-		err = r.client.Create(context.TODO(), pod)
+		reqLogger.Info("Creating a new Statefulset", "Statefulset.Namespace", sts.Namespace, "Statefulset.Name", sts.Name)
+		err = r.client.Create(context.TODO(), sts)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
-		// Pod created successfully - don't requeue
+		// sts created successfully - don't requeue
 		return reconcile.Result{}, nil
 	} else if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	// Pod already exists - don't requeue
-	reqLogger.Info("Skip reconcile: Pod already exists", "Pod.Namespace", found.Namespace, "Pod.Name", found.Name)
+	reqLogger.Info("Skip reconcile: Statefulset already exists", "Statefulset.Namespace", found.Namespace, "Statefulset.Name", found.Name)
 	return reconcile.Result{}, nil
-}
-
-// newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *ststestv1alpha1.StsTester) *corev1.Pod {
-	labels := map[string]string{
-		"app": cr.Name,
-	}
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cr.Name + "-pod",
-			Namespace: cr.Namespace,
-			Labels:    labels,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:    "busybox",
-					Image:   "busybox",
-					Command: []string{"sleep", "3600"},
-				},
-			},
-		},
-	}
 }

@@ -16,6 +16,8 @@ type StsTesterSpec struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// Reference: https://github.com/kubernetes/api/blob/master/apps/v1/types.go#L61
+	ConfigMapName       string                         `json:"configMapName"`
+	Replicas            int32                          `json:"replicas"`
 	PodManagementPolicy appsv1.PodManagementPolicyType `json:"podManagementPolicy,omitempty"`
 }
 
